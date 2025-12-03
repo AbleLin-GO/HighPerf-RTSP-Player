@@ -108,7 +108,7 @@ using UniqueAVOutputFormatContext =
     std::unique_ptr<AVFormatContext, AVOutputFormatContextDeleter>;
 
 // ----------------------------------------
-// [关键修复] 工厂辅助函数 (Factory Functions)
+//  工厂辅助函数 (Factory Functions)
 // ----------------------------------------
 
 // 修复报错: Use of undeclared identifier 'make_unique_packet'
@@ -122,7 +122,7 @@ inline UniqueAVFrame make_unique_frame() {
 }
 
 // ==========================================
-// 【新增】 Flush Packet 工厂函数
+//  Flush Packet 工厂函数
 // ==========================================
 // 创建一个特殊的 Flush Packet，用于 Seek 时通知解码器清空缓存
 // 我们约定：stream_index = -1 代表 Flush 包
