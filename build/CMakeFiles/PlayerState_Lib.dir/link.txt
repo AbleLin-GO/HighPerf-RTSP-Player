@@ -1,0 +1,2 @@
+/usr/bin/ar qc libPlayerState_Lib.a CMakeFiles/PlayerState_Lib.dir/src/PlayerState.cpp.o CMakeFiles/PlayerState_Lib.dir/src/VideoTranscoder.cpp.o
+/usr/bin/ranlib libPlayerState_Lib.a

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libPacketQueue_Lib.a CMakeFiles/PacketQueue_Lib.dir/src/PacketQueue.cpp.o
+/usr/bin/ranlib libPacketQueue_Lib.a

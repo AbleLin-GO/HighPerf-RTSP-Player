@@ -1,0 +1,2 @@
+/usr/bin/ar qc libRenderer_Lib.a CMakeFiles/Renderer_Lib.dir/src/YUVRenderer.cpp.o
+/usr/bin/ranlib libRenderer_Lib.a

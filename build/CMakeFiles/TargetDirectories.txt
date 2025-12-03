@@ -1,0 +1,7 @@
+/home/able/Desktop/media/build/CMakeFiles/PacketQueue_Lib.dir
+/home/able/Desktop/media/build/CMakeFiles/FrameQueue_Lib.dir
+/home/able/Desktop/media/build/CMakeFiles/PlayerState_Lib.dir
+/home/able/Desktop/media/build/CMakeFiles/Renderer_Lib.dir
+/home/able/Desktop/media/build/CMakeFiles/player_exe.dir
+/home/able/Desktop/media/build/CMakeFiles/edit_cache.dir
+/home/able/Desktop/media/build/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libFrameQueue_Lib.a CMakeFiles/FrameQueue_Lib.dir/src/FrameQueue.cpp.o
+/usr/bin/ranlib libFrameQueue_Lib.a
