@@ -1,6 +1,6 @@
 // #pragma once
 
-// #include "AVRAII.h" // 包含你提供的头文件
+// #include "AVRAII.h" 
 // #include <atomic>
 // #include <condition_variable>
 // #include <mutex>
@@ -63,10 +63,9 @@
 #include <string>
 #include <thread>
 
-// ... (RateControlMode 枚举保持不变)
 
 extern "C" {
-#include <libavutil/audio_fifo.h> // [新增] 音频 FIFO
+#include <libavutil/audio_fifo.h> // 音频 FIFO
 }
 // 码率控制模式
 enum class RateControlMode { CRF, CBR_VBV, ABR };
@@ -76,7 +75,6 @@ public:
   VideoTranscoder();
   ~VideoTranscoder();
 
-  // [修改] Init 增加音频参数
   // audio_channels: 声道数, audio_rate: 采样率, audio_layout: 声道布局
   bool Init(const std::string &output_file, int width, int height, int fps,
             int audio_channels, int audio_rate, AVChannelLayout audio_layout,
@@ -86,7 +84,6 @@ public:
   void Stop();
 
   void PushFrame(const AVFrame *src_frame);
-  // [新增] 推送音频帧
   void PushAudio(const AVFrame *src_audio);
 
 private:
@@ -94,7 +91,7 @@ private:
   void ConfigureRateControl(AVCodecContext *ctx, RateControlMode mode,
                             int bitrate);
 
-  // [新增] 内部音频处理函数
+  // 内部音频处理函数
   bool InitAudio(int channels, int rate, AVChannelLayout layout);
   void ProcessAudioPacket(AVFrame *frame);
   void FlushAudio();
@@ -105,12 +102,12 @@ private:
   UniqueAVCodecContext enc_ctx_; // 视频编码器
   AVStream *out_stream_ = nullptr;
 
-  // --- [新增] 音频资源 ---
+  // ---  音频资源 ---
   UniqueAVCodecContext audio_enc_ctx_; // 音频编码器
   AVStream *audio_out_stream_ = nullptr;
   UniqueSwrContext swr_ctx_; // 音频重采样 (格式转换)
   AVAudioFifo *audio_fifo_ =
-      nullptr; // [核心] 音频缓冲 FIFO (C原生指针，需手动释放)
+      nullptr; // 音频缓冲 FIFO (C原生指针，需手动释放)
 
   // 记录音频源参数，用于检测格式变化
   int src_sample_rate_ = 0;
@@ -124,7 +121,7 @@ private:
 
   // --- 队列 ---
   std::queue<UniqueAVFrame> video_queue_; // 视频队列
-  std::queue<UniqueAVFrame> audio_queue_; // [新增] 音频队列
+  std::queue<UniqueAVFrame> audio_queue_; //  音频队列
 
   std::mutex queue_mutex_;
   std::condition_variable queue_cv_;
