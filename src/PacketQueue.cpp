@@ -16,7 +16,7 @@ void PacketQueue::push(UniqueAVPacket packet) {
     return;
   }
 
-  // 【关键修改】：如果队列满了，阻塞等待消费者取走数据
+  // 如果队列满了，阻塞等待消费者取走数据
   // 防止读取速度太快导致内存爆炸
   m_cond.wait(
       lock, [this] { return m_abort_request || m_queue.size() < m_max_size; });
@@ -28,8 +28,7 @@ void PacketQueue::push(UniqueAVPacket packet) {
   // 所有权转移
   m_queue.push(std::move(packet));
 
-  // 通知等待中的线程 (可能是等待数据的 pop，也可能是等待空位的
-  // push，虽然通常是前者)
+  // 通知等待中的线程 (可能是等待数据的 pop，也可能是等待空位的push）
   m_cond.notify_all();
 }
 
@@ -48,7 +47,7 @@ bool PacketQueue::pop(UniqueAVPacket &packet_out) {
   packet_out = std::move(m_queue.front());
   m_queue.pop();
 
-  // 【关键修改】：取出数据后，队列有了空位，通知可能正在阻塞等待 push 的生产者
+  // 取出数据后，队列有了空位，通知可能正在阻塞等待 push 的生产者
   m_cond.notify_all();
 
   return true;
@@ -67,7 +66,7 @@ void PacketQueue::abort() {
   m_cond.notify_all();
 }
 
-// 【新增】 清空队列
+// 清空队列
 void PacketQueue::flush() {
 
   std::lock_guard<std::mutex> lock(m_mutex);
