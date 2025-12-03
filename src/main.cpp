@@ -223,7 +223,7 @@ void video_decode_thread_func(std::shared_ptr<PlayerState> state) {
         }
       }
 
-      // 【新增】 视频导出分流逻辑 (Side-Channel)
+      //  视频导出分流逻辑 (Side-Channel)
       if (state->is_exporting && state->transcoder) {
         // 将解码出来的原始 YUV 数据推送到转码器队列
         // PushFrame 内部会进行深拷贝，所以不影响下面的播放逻辑
