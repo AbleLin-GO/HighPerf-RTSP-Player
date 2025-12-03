@@ -32,9 +32,8 @@ int find_stream_index(AVFormatContext *fmt_ctx, AVMediaType type) {
   return -1;
 }
 
-// --- 1. 读取线程 (RAII版) ---
 // --- 1. 读取线程 (支持 Seek 与 软硬双模) ---
-// 注意：函数签名增加了 url 参数，用于判断流类型
+// 函数签名增加了 url 参数，用于判断流类型
 void read_thread_func(std::shared_ptr<PlayerState> state, std::string url) {
   std::cout << "[ReadThread] 启动...\n";
 
@@ -55,16 +54,14 @@ void read_thread_func(std::shared_ptr<PlayerState> state, std::string url) {
 
   while (!state->quit) {
 
-    // =================================================
-    // 【核心逻辑】 处理 Seek 请求
-    // =================================================
+    // 处理 Seek 请求
     if (state->seek_request) {
-      // 场景 A：直播流 -> 禁止 Seek
+      // 直播流禁止 Seek
       if (is_live_stream) {
         std::cout << "[ReadThread] 警告：直播流不支持 Seek 操作！\n";
         state->seek_request = false; // 消费掉请求，不做任何事
       }
-      // 场景 B：本地文件 -> 执行 Seek
+      // 本地文件执行 Seek
       else {
         int64_t seek_target = state->seek_pos;
         int64_t seek_min = INT64_MIN;
@@ -93,8 +90,6 @@ void read_thread_func(std::shared_ptr<PlayerState> state, std::string url) {
             state->audio_packet_queue.push(make_flush_packet()); // 发送红牌
           }
 
-          // 3. (可选) 如果之前是 EOF 状态，现在 Seek 回去了，要重置 EOF 标志
-          // 在这里简单通过 continue 恢复读取循环即可
         } else {
           std::cerr << "[ReadThread] Seek 失败!\n";
         }
@@ -143,7 +138,7 @@ void read_thread_func(std::shared_ptr<PlayerState> state, std::string url) {
         }
 
         error_count++;
-        if (error_count > 500) { // 容忍度调高一点
+        if (error_count > 500) { 
           std::cerr << "[ReadThread] 连续错误过多，断开连接！\n";
           state->quit = true;
           break;
@@ -177,9 +172,7 @@ void video_decode_thread_func(std::shared_ptr<PlayerState> state) {
   while (!state->quit) {
     if (!state->video_packet_queue.pop(packet))
       break;
-    // =================================================
-    // 【新增】 响应 Flush 包
-    // =================================================
+    //  响应 Flush 包
     if (packet->stream_index == -1) {
       // 1. 冲刷解码器内部缓存 (非常重要，否则画面会花)
       avcodec_flush_buffers(state->video_codec_ctx.get());
@@ -187,7 +180,7 @@ void video_decode_thread_func(std::shared_ptr<PlayerState> state) {
       // 2. 清空渲染队列 (旧的画面不要了)
       state->video_frame_queue.flush();
 
-      // 3. 重置同步时钟状态 (防止 PI 控制器因为时间跳变而发疯)
+      // 3. 重置同步时钟状态 (防止 PI 控制器因为时间跳变而故障)
       state->frame_last_pts = 0.0;
       state->frame_timer = 0.0;
       state->frame_last_delay = 40e-3;
@@ -230,9 +223,7 @@ void video_decode_thread_func(std::shared_ptr<PlayerState> state) {
         }
       }
 
-      // =======================================================
       // 【新增】 视频导出分流逻辑 (Side-Channel)
-      // =======================================================
       if (state->is_exporting && state->transcoder) {
         // 将解码出来的原始 YUV 数据推送到转码器队列
         // PushFrame 内部会进行深拷贝，所以不影响下面的播放逻辑
@@ -252,20 +243,20 @@ void video_decode_thread_func(std::shared_ptr<PlayerState> state) {
   std::cout << "[VideoDecodeThread] 退出...\n";
 }
 
-// --- 3. 视频显示线程 (OpenGL 版) ---
+// --- 3. 视频显示线程---
 void video_display_thread_func(std::shared_ptr<PlayerState> state) {
   std::cout << "[VideoDisplayThread] 启动 (OpenGL Mode)...\n";
 
   UniqueAVFrame frame;
 
-  // 【1. 创建渲染器实例】
+  //  创建渲染器实例
   // OpenGL 上下文通常需要在渲染线程初始化，或者在主线程初始化后 MakeCurrent
   // 简单的做法：在主线程创建 Window，在这里创建 OpenGL Context (通过
   // YUVRenderer::Init)
   YUVRenderer renderer;
   bool renderer_inited = false;
 
-  // --- 同步阈值常量 (保持不变) ---
+  //  同步阈值常量  
   const double AV_SYNC_THRESHOLD_MIN = 0.04;
   const double AV_SYNC_THRESHOLD_MAX = 0.1;
   const double KP = 0.8;
@@ -288,7 +279,7 @@ void video_display_thread_func(std::shared_ptr<PlayerState> state) {
     if (!frame)
       break;
 
-    // --- 同步逻辑开始 (完全保留你之前的优秀逻辑) ---
+    //  同步逻辑开始
     if (frame->pts != AV_NOPTS_VALUE) {
       double video_clock = frame->pts * av_q2d(state->video_stream->time_base);
       double frame_duration = 0.0;
@@ -370,12 +361,9 @@ void video_display_thread_func(std::shared_ptr<PlayerState> state) {
     }
     // --- 同步逻辑结束 ---
 
-    // =================================================
-    // 【OpenGL 渲染核心修改】
-    // =================================================
+    // OpenGL 渲染
     if (frame->width > 0 && frame->height > 0) {
-
-      // 1. 延迟初始化渲染器 (需要拿到宽高)
+      // 1. 延迟初始化渲染器
       if (!renderer_inited) {
         // 这里的 state->window 是在 main 中创建的 SDL_Window
         if (renderer.Init(state->window, frame->width, frame->height)) {
@@ -395,7 +383,7 @@ void video_display_thread_func(std::shared_ptr<PlayerState> state) {
       }
 
       // 2. 直接渲染 YUV 数据 (零拷贝核心)
-      // 注意：这里不再需要 sws_scale，直接把 data[0], data[1], data[2] 喂给 GPU
+      // 这里不再需要 sws_scale，直接把 data[0], data[1], data[2] 喂给 GPU
       renderer.Render(frame->data[0], frame->data[1], frame->data[2],
                       frame->linesize[0], frame->linesize[1],
                       frame->linesize[2]);
@@ -408,10 +396,7 @@ void video_display_thread_func(std::shared_ptr<PlayerState> state) {
   std::cout << "[VideoDisplayThread] 退出...\n";
 }
 
-// ============================================================================
 // 4. 音频解码线程 (Audio Decode Thread) - [已修复缓冲区写入逻辑]
-// ============================================================================
-// --- 4. 音频解码线程 (修复噪音版) ---
 void audio_decode_thread_func(std::shared_ptr<PlayerState> state) {
   std::cout << "[AudioDecodeThread] 启动...\n";
   auto frame = make_unique_frame();
@@ -421,9 +406,7 @@ void audio_decode_thread_func(std::shared_ptr<PlayerState> state) {
   while (!state->quit) {
     if (!state->audio_packet_queue.pop(packet))
       break;
-    // =================================================
     // 【新增】 响应 Flush 包
-    // =================================================
     if (packet->stream_index == -1) {
       // 1. 冲刷解码器
       avcodec_flush_buffers(state->audio_codec_ctx.get());
@@ -437,7 +420,7 @@ void audio_decode_thread_func(std::shared_ptr<PlayerState> state) {
         state->audio_buf_read_pos = 0;
         state->audio_buf_write_pos = 0;
 
-        // 3. 重置 PI 控制器积分项 (关键！防止旧的累积误差影响 Seek 后的同步)
+        // 3. 重置 PI 控制器积分项 (防止旧的累积误差影响 Seek 后的同步)
         state->audio_diff_cum = 0.0;
       }
 
@@ -511,14 +494,11 @@ void audio_decode_thread_func(std::shared_ptr<PlayerState> state) {
             av_get_bytes_per_sample(state->audio_tgt.fmt); // S16 = 2
         int data_size = len * state->audio_tgt.channels * bytes_per_sample;
 
-        // 【关键修复】：确保写入缓冲区时没有处于“半个样本”的状态
+        // 确保写入缓冲区时没有处于“半个样本”的状态
         // 虽然 data_size 理论上是对齐的，但这是一个保险
 
-        // =======================================================
-        // 【新增】 音频导出分流
-        // 这里的 frame 是解码后原始的 frame，或者你可以选择分发 swr 后的数据
-        // 建议分发原始 frame，让 Transcoder 内部自己处理重采样，解耦更彻底
-        // =======================================================
+        // 音频导出分流
+        // 这里的 frame 是解码后原始的 frame
         if (state->is_exporting && state->transcoder) {
           state->transcoder->PushAudio(frame.get());
         }
@@ -553,7 +533,7 @@ void audio_decode_thread_func(std::shared_ptr<PlayerState> state) {
           state->audio_buf_size += data_size;
 
           // 更新时钟：这里使用这一帧的 PTS
-          // 只有成功写入了，才更新时钟，这样 current_time 计算才准
+          // 只有成功写入了，才更新时钟，这样 current_time 计算才准确
           if (frame->pts != AV_NOPTS_VALUE) {
             state->audio_clock =
                 frame->pts * av_q2d(state->audio_stream->time_base) +
@@ -579,7 +559,7 @@ void sdl_audio_callback(void *userdata, Uint8 *stream, int len) {
 
   std::lock_guard<std::mutex> lock(state->audio_mutex);
 
-  // 【诊断 3】检查缓冲区状态
+  // 检查缓冲区状态
   // 为了防止日志刷屏，我们每调用 50 次打印一次 (约 1秒一次)
   static int log_counter = 0;
   if (log_counter++ % 50 == 0) {
@@ -610,8 +590,7 @@ void sdl_audio_callback(void *userdata, Uint8 *stream, int len) {
   state->audio_buf_size -= to_read;
 }
 
-// 主函数 (OpenGL + Seek + Record 最终版)
-// ============================================================================
+
 int main(int argc, char **argv) {
   std::string input_url = "rtsp://127.0.0.1/live/test";
   if (argc > 1) {
@@ -699,9 +678,7 @@ int main(int argc, char **argv) {
                               spec.channels);
   }
 
-  // =================================================
-  // 【OpenGL 修改 1】创建窗口 (移除 Renderer)
-  // =================================================
+  // 创建窗口 
   int w = 800, h = 600;
   if (state->video_codec_ctx) {
     w = state->video_codec_ctx->width;
@@ -722,7 +699,7 @@ int main(int argc, char **argv) {
   state->status = PlayerStatus::PLAYING;
   std::vector<std::thread> threads;
 
-  // 【核心修改 2】传入 URL 给 read_thread_func
+  // 传入 URL 给 read_thread_func
   threads.emplace_back(read_thread_func, state, input_url);
 
   if (state->video_stream_index >= 0) {
@@ -742,7 +719,7 @@ int main(int argc, char **argv) {
       if (event.type == SDL_QUIT) {
         state->quit = true;
       }
-      // 【OpenGL 修改 3】删除了 FF_REFRESH_EVENT 处理
+      // 删除了 FF_REFRESH_EVENT 处理
 
       else if (event.type == SDL_KEYDOWN) {
         if (event.key.repeat != 0)
@@ -811,7 +788,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    // 音频起播检查 (保持不变)
+    // 音频起播检查 
     if (!audio_started && audio_dev_id != 0) {
       size_t buf_size = 0;
       {
@@ -828,7 +805,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  // Cleanup (保持不变)
+  // Cleanup 
   state->video_packet_queue.abort();
   state->video_frame_queue.abort();
   state->audio_packet_queue.abort();
@@ -838,7 +815,7 @@ int main(int argc, char **argv) {
     if (t.joinable())
       t.join();
 
-  // 【OpenGL 修改 4】不再销毁 Texture/Renderer
+  // 不再销毁 Texture/Renderer
   SDL_DestroyWindow(window);
   SDL_Quit();
 
