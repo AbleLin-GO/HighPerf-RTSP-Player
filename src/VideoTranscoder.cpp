@@ -21,7 +21,6 @@ VideoTranscoder::~VideoTranscoder() {
   av_channel_layout_uninit(&src_ch_layout_);
 }
 
-// --- 1. 补回丢失的配置函数 ---
 void VideoTranscoder::ConfigureRateControl(AVCodecContext *ctx,
                                            RateControlMode mode, int bitrate) {
   // 基础码率设置 (bps)
@@ -50,7 +49,6 @@ void VideoTranscoder::ConfigureRateControl(AVCodecContext *ctx,
   }
 }
 
-// --- 2. 包含音频参数的 Init ---
 bool VideoTranscoder::Init(const std::string &filename, int width, int height,
                            int fps, int audio_channels, int audio_rate,
                            AVChannelLayout audio_layout, RateControlMode mode,
@@ -147,7 +145,6 @@ bool VideoTranscoder::InitAudio(int channels, int rate,
   return true;
 }
 
-// --- 4. 补回丢失的 Start 和 Stop ---
 void VideoTranscoder::Start() {
   running_ = true;
   finish_signal_ = false;
@@ -177,7 +174,6 @@ void VideoTranscoder::Stop() {
   running_ = false;
 }
 
-// --- 5. 推流函数 ---
 void VideoTranscoder::PushFrame(const AVFrame *src_frame) {
   if (!running_)
     return;
@@ -223,7 +219,6 @@ void VideoTranscoder::PushAudio(const AVFrame *src_audio) {
   queue_cv_.notify_one();
 }
 
-// --- 6. 核心编码循环 ---
 void VideoTranscoder::EncodeThreadFunc() {
   auto pkt = make_unique_packet();
 
@@ -279,7 +274,6 @@ void VideoTranscoder::EncodeThreadFunc() {
   std::cout << "[Transcoder] Thread Exit.\n";
 }
 
-// --- 7. 音频处理与 Flush ---
 void VideoTranscoder::ProcessAudioPacket(AVFrame *frame) {
   if (!swr_ctx_ || frame->format != src_sample_fmt_ ||
       frame->sample_rate != src_sample_rate_) {
@@ -340,7 +334,7 @@ void VideoTranscoder::ProcessAudioPacket(AVFrame *frame) {
         av_interleaved_write_frame(fmt_ctx_.get(), pkt.get());
         av_packet_unref(pkt.get());
       }
-    }
+    } 
   }
 }
 
