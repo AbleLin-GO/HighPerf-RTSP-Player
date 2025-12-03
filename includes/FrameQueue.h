@@ -16,7 +16,7 @@ public:
 
   void abort();
   size_t size();
-  // 【新增】 清空队列
+  // 清空队列
   void flush();
 
 private:
