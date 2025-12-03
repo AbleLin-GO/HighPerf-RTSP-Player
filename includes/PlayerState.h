@@ -10,7 +10,7 @@
 #include <vector>
 extern "C" {
 #include <libavutil/channel_layout.h>
-#include <libavutil/motion_vector.h> // [关键] 修复 mvs 报错需要这个头文件
+#include <libavutil/motion_vector.h> // 修复 mvs 报错需要这个头文件
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
 }
@@ -73,7 +73,7 @@ public:
   int video_linesize = 0;
   bool video_frame_ready = false;
 
-  // [关键修复] 运动矢量 (Motion Vectors)
+  // 运动矢量 (Motion Vectors)
   // 修复: No member named 'mvs'
   std::vector<AVMotionVector> mvs;
   bool mv_visualization_enabled = true;
@@ -85,7 +85,7 @@ public:
   UniqueAVCodecContext audio_codec_ctx;
   FrameQueue audio_frame_queue; // 音频帧队列
 
-  // [关键修复] 音频重采样上下文记录 (用于检测格式变化)
+  //  音频重采样上下文记录 (用于检测格式变化)
   // 修复: No member named 'swr_in_...'
   UniqueSwrContext swr_ctx;
   AVSampleFormat swr_in_fmt = AV_SAMPLE_FMT_NONE;
@@ -97,7 +97,7 @@ public:
     int freq;
     int channels;
     int64_t channel_layout;
-    // [关键修复] 新版 FFmpeg 声道布局结构体
+    // 新版 FFmpeg 声道布局结构体
     // 修复: No member named 'channel_layout_struct'
     AVChannelLayout channel_layout_struct;
     enum AVSampleFormat fmt;
@@ -119,9 +119,7 @@ public:
   double audio_diff_cum = 0.0; // 积分项 (累积误差)
   double audio_diff_avg_count = 0.0; // 用于计算平均误差（可选，这里用作计数器）
 
-  // ==========================================
-  // 【新增 2】视频导出/转码模块
-  // ==========================================
+  // 视频导出/转码模块
   std::shared_ptr<VideoTranscoder> transcoder; // 转码器实例
   std::atomic<bool> is_exporting{false}; // 标记是否正在进行导出任务
 
