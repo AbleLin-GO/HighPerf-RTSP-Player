@@ -3,7 +3,6 @@
 #include <SDL2/SDL_video.h>
 #include <iostream>
 #include <vector>
-// 【关键修改】加入这一行，告诉 SDL 我们自己接管 main 函数
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
@@ -11,21 +10,21 @@
 const char *vertexShaderSource = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec2 aTexCoord; // 【新增】接收纹理坐标
+    layout (location = 1) in vec2 aTexCoord; // 接收纹理坐标
 
-    out vec2 TexCoord; // 【新增】输出到片元着色器的纹理坐标
+    out vec2 TexCoord; // 输出到片元着色器的纹理坐标
 
     void main()
     {
         gl_Position = vec4(aPos, 1.0);
-        TexCoord = aTexCoord; // 【新增】将纹理坐标传递给片元着色器
+        TexCoord = aTexCoord; // 将纹理坐标传递给片元着色器
     }
 )";
 
 // 片元着色器代码（决定画什么）
 const char *fragmentShaderSource = R"(
     #version 330 core
-    in vec2 TexCoord; // 【新增】接收从顶点着色器传递的纹理坐标
+    in vec2 TexCoord; // 接收从顶点着色器传递的纹理坐标
     out vec4 FragColor;
 
     // 新增三个采样器
@@ -110,7 +109,7 @@ int main() {
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
 
-  // --- 纹理和 uniform 变量设置 (新增) ---
+  // --- 纹理和 uniform 变量设置 ---
   GLuint textures[3];
   glGenTextures(3, textures);
 
@@ -133,7 +132,7 @@ int main() {
   std::vector<uint8_t> dummy_v(VIDEO_W * VIDEO_H / 4, 128);
   // (用 128 填充，Y=128是灰色，U/V=128是无色差)
 
-  // --- 初始分配 GPU 内存空间并绑定参数 (只需运行一次) ---
+  // --- 初始分配 GPU 内存空间并绑定参数  ---
 
   // 1. Y 分量 (全尺寸)
   glActiveTexture(GL_TEXTURE0);              // 激活纹理单元 0
@@ -216,11 +215,11 @@ int main() {
     }
     // --- 替换渲染循环中的绘制逻辑 ---
 
-    // 1. 清屏 (深灰色)
+    // 1. 清屏
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // 2. 使用我们的 Shader
+    // 2. 使用Shader
     glUseProgram(shaderProgram);
 
     // 3. **【核心】更新纹理数据 (模拟 FFmpeg 帧更新)**
