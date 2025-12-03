@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-// 顶点着色器 (不变)
+// 顶点着色器
 const char *VERTEX_SHADER = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
@@ -14,7 +14,7 @@ const char *VERTEX_SHADER = R"(
     }
 )";
 
-// 片元着色器 (不变)
+// 片元着色器
 const char *FRAG_SHADER = R"(
     #version 330 core
     in vec2 TexCoord;
@@ -63,7 +63,7 @@ bool YUVRenderer::Init(SDL_Window *window, int width, int height) {
     return false;
   }
 
-  // 3. 编译 Shader'
+  // 3. 编译 Shader
   // CompileShader的作用：编译OpenGL着色器程序，返回程序ID
   mProgram = CompileShader(VERTEX_SHADER, FRAG_SHADER);
   if (mProgram == 0)
@@ -170,8 +170,6 @@ void YUVRenderer::Render(const uint8_t *dataY, const uint8_t *dataU,
 
   SDL_GL_SwapWindow(mWindow);
 }
-
-// 在 src/YUVRenderer.cpp 末尾
 
 GLuint YUVRenderer::CompileShader(const char *vertexSource,
                                   const char *fragmentSource) {
