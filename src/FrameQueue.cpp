@@ -8,14 +8,14 @@ FrameQueue::FrameQueue(size_t max_size)
 FrameQueue::~FrameQueue() { abort(); }
 
 void FrameQueue::push(UniqueAVFrame frame) {
-  // 【关键修改】：改为 unique_lock 以支持 wait
+  // ：改为 unique_lock 以支持 wait
   std::unique_lock<std::mutex> lock(m_mutex);
 
   if (m_abort_request) {
     return;
   }
 
-  // 【关键修改】：如果堆积了太多未渲染的帧，解码线程暂停
+  // 如果堆积了太多未渲染的帧，解码线程暂停
   m_cond.wait(
       lock, [this] { return m_abort_request || m_queue.size() < m_max_size; });
 
@@ -39,7 +39,7 @@ bool FrameQueue::pop(UniqueAVFrame &frame_out) {
   frame_out = std::move(m_queue.front());
   m_queue.pop();
 
-  // 【关键修改】：取走一帧后，通知可能阻塞的解码线程继续工作
+  // 取走一帧后，通知可能阻塞的解码线程继续工作
   m_cond.notify_all();
 
   return true;
@@ -60,7 +60,7 @@ size_t FrameQueue::size() {
   return m_queue.size();
 }
 
-// 【新增】 清空队列
+// 清空队列
 void FrameQueue::flush() {
 
   std::lock_guard<std::mutex> lock(m_mutex);
